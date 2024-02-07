@@ -11,11 +11,12 @@ output: html_document
 #and health of a tv show on Netfilx?
 
 #Q2: Answer why this question(s) is/are important to you
-#Ans: Because I am intrested in streaming and seeing what information
+#Ans: Because I am interested in streaming and seeing what information
 #can be collected from simple streaming data
 
 #Q3: Find and collect data (need one dependent variable and more than 3 dependent variables)
-#Ans: url-https://www.kaggle.com/datasets/shivamb/netflix-shows
+#Ans: the dependent variable will be the longevity/duration of a show or movie to see what factors impact how long a show lasts for
+url-https://www.kaggle.com/datasets/shivamb/netflix-shows
 
 #Q4: Describe your data (create a data dictionary):
 #Ans a 8807 row by 12 column data set that has every tv and movie id 
