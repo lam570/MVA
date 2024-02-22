@@ -1,0 +1,62 @@
+---
+title: "HW3"
+author: "Leon Masin"
+date: "2/25/2024"
+output: html_document
+---
+  
+```{r}
+library(readr)
+diabetes <- read_csv("C:/Users/Student/Downloads/diabetes.csv")
+colnames(diabetes)[7] = "pedigree"
+
+ ###univariate
+#mean: t-test
+options(scipen = 999)
+#expands p value to stop using e
+
+#I am t testing to find out if there is a relationship in means between any of my independent variables (Glucose, BMI, Age) and my dependent variable (Diabetes outcome)
+with(data=diabetes,t.test(Glucose[Outcome=="0"],Glucose[Outcome=="1"],var.equal=TRUE))
+#p value is less then 0.00000000000000022 meaning there is a strong correlation between these variables, we should drill down on them
+with(data=diabetes,t.test(BMI[Outcome=="0"],BMI[Outcome=="1"],var.equal=TRUE))
+##p value is less then 0.00000000000000022 meaning there is a strong correlation between these variables, we should drill down on them
+with(data=diabetes,t.test(Insulin[Outcome=="0"],Insulin[Outcome=="1"],var.equal=TRUE))
+#p value is 0.0002862 meaning there is a strong correlation between these variables, we should drill down on them
+with(data=diabetes,t.test(BloodPressure[Outcome=="0"],BloodPressure[Outcome=="1"],var.equal=TRUE))
+#p value is 0.07 meaning there is no significance between blood pressure and diabetes outcome, we should not look into this variable
+with(data=diabetes, t.test(Pregnancies[Outcome=="0"], Pregnancies[Outcome=="1"],var.equal = TRUE))
+#p value is 0.0000000005065 meaning there is a strong correlation between these variables, we should drill down on them
+with(data=diabetes, t.test(SkinThickness[Outcome=="0"], SkinThickness[Outcome=="1"],var.equal = TRUE))
+#p value is 0.03835 meaning there is a strong correlation between these variables, we should drill down on them
+with(data=diabetes, t.test(Age[Outcome=="0"], Age[Outcome=="1"],var.equal = TRUE))
+# p value is 0.0000000000221 meaning there is a strong correlation between these variables, we should drill down on them
+with(data=diabetes, t.test(pedigree[Outcome=="0"], pedigree[Outcome=="1"],var.equal = TRUE))
+#p value is 0.000001255 meaning there is a strong correlation between these variables, we should drill down on them
+
+#variance: F-Test
+#we are doing the F test to see if there is a lot of noise in our variance, and to judge group means with the variance between them, essentially making sure all of our data has similar means because if they don't we need to drill down on those variables making the most noise
+attach(diabetes)
+var.test(BMI[Outcome=="0"],BMI[Outcome=="1"])
+#here the p values is 0.295 higher then our significant value meaning there is not a significant relationship in the group means between BMI and Outcome
+var.test(pedigree[Outcome=="0"],pedigree[Outcome=="1"])
+detach(diabetes)
+ 
+####multivariate
+discale <- scale(diabetes[,1:8])
+diframe <- data.frame(diabetes, discale)
+#scaled to work with multi variate tests
+ 
+##Mean Test- hotelling test
+#the purpose of the hoteling test is to find out if my variables are close together in regards to their averages or are they different and thus harder to group together
+library(Hotelling)
+hotdia <- hotelling.test(Pregnancies+Glucose+BloodPressure+SkinThickness+Insulin+BMI+pedigree+Age ~ Outcome,data=diframe)
+cat("T2 statistic =",hotdia$stat[[1]],"\n")
+print(hotdia)
+#here the the t stat value is 333.3949 meaning there is a large amount of difference between our variables, meaning our variables are not very similar and we can look at our univariate data to drill down on specific variables
+
+#Variance Test- Manova
+#we do the Multiple Anova test to test out multiple group means and their variance
+summary(manova(as.matrix(diabetes[,-9])~Outcome, data=diabetes))
+#here again the p value is less then 0.00000000000000022 meaning there is a huge relationship between our independent and dependent variables 
+
+```
