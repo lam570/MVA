@@ -1,0 +1,85 @@
+author: "Leon Masin"
+date: "3/8/2024"
+output: html_document
+---
+  
+```{r}
+library(readr)
+library(cluster)
+library(factoextra)
+library(magrittr)
+library(NbClust)
+diabetes <- read_csv("C:/Users/Student/Downloads/diabetes.csv")
+colnames(diabetes)[7] = "pedigree"
+str(diabetes)
+attach(diabetes)
+
+
+#non hierarchical clustering (K-means)
+
+#scaled
+matstd.diabetes <- scale(diabetes[,-9])
+
+#Two clusters
+kmeans2.diabetes<- kmeans(matstd.diabetes,2,nstart = 10)
+perc.var.2 <- round(100*(1 - kmeans2.diabetes$betweenss/kmeans2.diabetes$totss),1)
+names(perc.var.2) <- "Perc. 2 clus"
+perc.var.2
+
+#Three Clusters
+(kmeans3.diabetes <- kmeans(matstd.diabetes,3,nstart = 10))
+perc.var.3 <- round(100*(1 - kmeans3.diabetes$betweenss/kmeans3.diabetes$totss),1)
+names(perc.var.3) <- "Perc. 3 clus"
+perc.var.3
+
+#Four clusters
+(kmeans4.diabetes <- kmeans(matstd.diabetes,4,nstart = 10))
+perc.var.4 <- round(100*(1 - kmeans4.diabetes$betweenss/kmeans4.diabetes$totss),1)
+names(perc.var.4) <- "Perc. 4 clus"
+perc.var.4
+
+#Five clusters
+(kmeans5.diabetes <- kmeans(matstd.diabetes,5,nstart = 10))
+perc.var.5 <- round(100*(1 - kmeans5.diabetes$betweenss/kmeans5.diabetes$totss),1)
+names(perc.var.5) <- "Perc. 5 clus"
+perc.var.5
+
+#Six clusters
+(kmeans6.diabetes <- kmeans(matstd.diabetes,6,nstart = 10))
+perc.var.6 <- round(100*(1 - kmeans6.diabetes$betweenss/kmeans6.diabetes$totss),1)
+names(perc.var.6) <- "Perc. 6 clus"
+perc.var.6
+attributes(perc.var.6)
+Variance_List <- c(perc.var.2,perc.var.3,perc.var.4,perc.var.5,perc.var.6)
+
+#Variance_List/ Visualization
+plot(Variance_List)
+#explanation:
+#stops being linear after 2 clusters, so the optimal cluster amount is 2
+
+#membership
+(agn.diabetes <- agnes(diabetes, metric="euclidean", stand=TRUE, method = "single"))
+agn.diabetes$merge
+
+#second visualization
+plot(agn.diabetes, which.plots=2)
+
+#hierarchical clustering
+
+#optimal cluster method/visualization
+res.nbclust <- diabetes %>% scale() %>% NbClust(distance = "euclidean", min.nc = 2, max.nc = 10, method = "complete", index ="all") 
+#optimal number of clusters is 2, because according to the majority rule this is the best amount of clusters/ 2 creates the largest amount of distance between clusters
+
+#cluster membership in visual form
+matstd.diabetes <- scale(diabetes[,1:8])
+dist.diabetes <- dist(matstd.diabetes, method="euclidean")
+clusemploy.nn <- hclust(dist.diabetes, method = "single")
+
+plot(as.dendrogram(clusemploy.nn),ylab="Distance between indicators",ylim=c(0,6),
+     main="Dendrogram. Different helath risks \n  and their impact")
+
+#Visualization
+pam.res <- pam(diabetes, 2)
+fviz_cluster(pam.res)
+
+```
