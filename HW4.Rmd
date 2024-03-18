@@ -1,0 +1,61 @@
+author: "Leon Masin"
+date: "3/3/2024"
+output: html_document
+---
+  
+```{r}
+library(readr)
+library(FactoMineR)
+library("factoextra")
+
+diabetes <- read_csv("C:/Users/Student/Downloads/diabetes.csv")
+colnames(diabetes)[7] = "pedigree"
+str(diabetes)
+attach(diabetes)
+
+#correlation matrix
+cor(diabetes[-9])
+
+#pca analysis
+diabetes_pca <- prcomp(diabetes[,-9],scale=TRUE)
+diabetes_pca
+summary(diabetes_pca)
+eigen_diabetes<- diabetes_pca$sdev^2
+
+#explanation
+#by using the summary function I'm able to see how much variance each PC dimension adds, in terms of variate representation PC1/2 add around 20-25 percent of the total variance and everything past that adds less then 15 percent util pc8 which only adds 5 percent of the total variance, also to note when using the cor function to find the correlation matrix PC2 by far has the highest correlation with most variables.
+
+
+#visualizations
+
+#Scree Diagram
+plot(eigen_diabetes, xlab = "Component number", ylab = "Component variance", type = "l", main = "Scree diagram")
+#but if we use only pc1-3 we amount to only 61 percent of the variance, going to look at second elbow
+
+#log diagram
+plot(log(eigen_diabetes), xlab = "Component number",ylab = "log(Component variance)", type="l",main = "Log(eigenvalue) diagram")
+#the second elbow seems to be key here so I'll use PC6 which cumultaively includes around 90 percent of the total variance
+
+#Variable PCA
+res.pca <- PCA(diabetes[,-9], graph = FALSE)
+fviz_pca_var(res.pca, col.var = "black")
+#Blood Pressure adds a lot to the dim 1/2
+
+#Biplot
+fviz_pca_biplot(res.pca, repel = TRUE,col.ind = diabetes$Outcome,
+                col.var = "#2E9FDF", # Variables color
+                )
+#too dense to see anything
+
+
+#individual values 
+fviz_pca_ind(res.pca, 
+             pointsize = 3, pointshape = 21, fill = "lightblue",
+             labelsize = 5, repel = TRUE)
+
+
+
+###final conclusion
+#I will use PC1-6 to get 90% of the total variance from my data and thus discard two dimensions making it easier to further analysis
+
+```
