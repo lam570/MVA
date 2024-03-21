@@ -1,0 +1,50 @@
+author: "Leon Masin"
+date: "3/25/2024"
+output: html_document
+---
+  
+```{r}
+library(readr)
+library(psych)
+
+
+diabetes <- read_csv("C:/Users/Student/Downloads/diabetes.csv")
+colnames(diabetes)[7] = "pedigree"
+str(diabetes)
+attach(diabetes)
+
+#correlation matrix
+cor(diabetes[-9])
+
+#Q1
+#I would want to keep 3 factors (Rc2,1,3) 
+#because they have a total cumulative proportion of .82 and explain a lot of the proporation if looking at 4 factors
+#also when looking at some of the visualizations the drop off after 3 factors is immense and a fourth factor would only include 1 column
+fit.pc <- principal(diabetes[-9], nfactors=3, rotate="varimax")
+fit.pc
+
+#Q2
+#Model explanation
+#The model is showing us what columns have the most significance i each factor, 
+#it shows us the total variance it brings and how much weight that is globally, 
+#it also does underlying linear algebra to explain if the factor count is too high, too low, or sufficient
+#And based on the RMSE the error is incredibly low
+
+#Q3- what columns are attributed to which factor
+fit.pc$loadings
+fit.pc$scores
+fa.diagram(fit.pc)
+#In RC2 we have Age, Pregnancies
+#In RC1 we have BMI, Blood Pressure, Skin Thickness
+#In RC3 we have Glucose and Insulin, Pedigree
+
+#Q4 
+#Here are some visualizations
+fa.parallel(diabetes[-9])
+vss(diabetes[-9])
+corrm.emp <- cor(diabetes[-9])
+corrm.emp
+plot(corrm.emp)
+dia_pca <- prcomp(diabetes[-9], scale=TRUE)
+plot(dia_pca)
+```
