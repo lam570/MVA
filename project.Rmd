@@ -21,6 +21,8 @@ classmean <- colMeans(mva)
 mvascale <- mahalanobis(mva, classmean, classcov)
 print(mvascale[1])
 
+#Here I am the first row, and it shows that I am 452 units away from the average student, this is probably because I consume far more OTT content then the rest of my class, because of my love of film and desire to work in the entertainment industry.
+
 #PCA Analysis
 library(readr)
 library(FactoMineR)
