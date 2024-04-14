@@ -36,6 +36,8 @@ prediction <- data.frame(Instagram = 1, LinkedIn = 5, SnapChat = 1, Twitter = 2,
 predicted_feel <- predict(fit, newdata = prediction)
 print(predicted_feel)
 
+#here the average happiness of someone using these apps for that amount of time would be 3.21/5
+
 #Model Accuracy
 gvmodel <- gvlma(fit)
 summary(gvmodel)
