@@ -1,0 +1,53 @@
+---
+title: "logreg-dia"
+author: "Leon Masin"
+date: "2024-04-17"
+output: html_document
+---
+
+```{r}
+library(readr)
+diabetes <- read_csv("C:/Users/Student/Downloads/diabetes.csv")
+colnames(diabetes)[7] = "pedigree"
+attach(diabetes)
+library(ggplot2)
+library(cowplot)
+library(regclass)
+library(caret)
+library(e1071)
+library(pROC)
+
+diabetes$Outcome <- as.factor(diabetes$Outcome)
+
+#model development
+logistic_simple <- glm(Outcome ~ ., data=diabetes, family="binomial")
+
+#we use all coumns to make a logisitc regression model
+
+#model acceptance
+summary(logistic_simple)
+
+#here it seems like nost of our p values are quite low which is very good and emans most of the data is not random
+
+#residual analysis
+residuals(logistic_simple)
+#the errors are quite low again showing our logisitc regression is quite accurate
+
+#prediction
+predicted.data <- data.frame(probability.of.Outcome=logistic_simple$fitted.values, Outcome=diabetes$Outcome)
+predicted.data <- predicted.data[order(predicted.data$probability.of.Outcome, decreasing=FALSE),]
+predicted.data$rank <- 1:nrow(predicted.data)
+predicted.data
+
+#first we make the prediction then we create a rank column to make it easier to udnerstand by having it in descending order to use in a visualization later, called the rank column
+
+#model accuracy
+ggplot(data=predicted.data, aes(x=rank, y=probability.of.Outcome)) +
+geom_point(aes(color=Outcome), alpha=1, shape=4, stroke=2) +
+xlab("Index") +
+ylab("Predicted probability of getting diabetes")
+
+
+#this visualization shows us the model is very accurate in an easy to understand manner
+```
+
