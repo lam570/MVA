@@ -1,7 +1,7 @@
 ---
 title: "logreg-dia"
 author: "Leon Masin"
-date: "2024-04-17"
+date: "2024-04-19"
 output: html_document
 ---
 
@@ -39,7 +39,7 @@ predicted.data <- predicted.data[order(predicted.data$probability.of.Outcome, de
 predicted.data$rank <- 1:nrow(predicted.data)
 predicted.data
 
-#first we make the prediction then we create a rank column to make it easier to udnerstand by having it in descending order to use in a visualization later, called the rank column
+#first we make the prediction then we create a rank column to make it easier to understand by having it in descending order to use in a visualization later, called the rank column
 
 #model accuracy
 ggplot(data=predicted.data, aes(x=rank, y=probability.of.Outcome)) +
