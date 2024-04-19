@@ -1,0 +1,60 @@
+---
+title: "logreg-mva"
+author: "Leon Masin"
+date: "2024-04-19"
+output: html_document
+---
+  
+```{r}
+library(psych)
+library(readxl)
+mva <- read_excel("C:/Users/Student/Downloads/social_media_cleaned.xlsx")
+mva <- mva[-1]
+colnames(mva)[9] = "Feel"
+library(ggplot2)
+library(cowplot)
+library(regclass)
+library(caret)
+library(e1071)
+library(pROC)
+attach(mva)
+
+mva$Feel <- as.factor(mva$Feel)
+mva$Instagram <- as.integer(mva$Instagram)
+mva$LinkedIn <- as.integer(mva$LinkedIn)
+mva$SnapChat <- as.integer(mva$SnapChat)
+mva$Twitter <- as.integer(mva$Twitter)
+mva$`Whatsapp/Wechat` <- as.integer(mva$`Whatsapp/Wechat`)
+mva$youtube <- as.integer(mva$youtube)
+mva$OTT <- as.integer(mva$OTT)
+mva$Reddit <- as.integer(mva$Reddit)
+
+#model development
+logistic_simple <- glm(Feel~Instagram+LinkedIn+SnapChat+Twitter+`Whatsapp/Wechat` +youtube+OTT+Reddit, data=mva, family="binomial")
+
+#we include all the types of content someone has looked at
+
+#model acceptance
+summary(logistic_simple)
+
+#the p values seems quite high here meaning there is a lot of randomness in our data set
+#residual analysis
+residuals(logistic_simple)
+
+#prediction
+predicted.data <- data.frame(probability.of.Feel=logistic_simple$fitted.values, Outcome=mva$Feel)
+predicted.data <- predicted.data[order(predicted.data$probability.of.Feel, decreasing=FALSE),]
+predicted.data$rank <- 1:nrow(predicted.data)
+predicted.data
+
+#we arranged the predictions in descending order to make it easier to visualize
+
+#model accuracy
+ggplot(data=predicted.data, aes(x=rank, y=probability.of.Feel)) +
+geom_point(aes(color=Feel), alpha=1, shape=4, stroke=2) +
+xlab("Index") +
+ylab("Predicted probability of feeling happy")
+
+#here the model seems to be accurate even though the amount of data points is very low
+
+```
