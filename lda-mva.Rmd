@@ -1,0 +1,54 @@
+---
+title: "LDA-mva"
+author: "Leon Masin"
+date: "2024-04-25"
+output: html_document
+---
+  
+```{r}
+library(psych)
+library(readxl)
+mva <- read_excel("C:/Users/Student/Downloads/social_media_cleaned.xlsx")
+mva <- mva[-1]
+colnames(mva)[9] = "Feel"
+library(MASS)
+library(ggplot2)
+library(memisc)
+library(ROCR)
+library(dplyr)
+library(klaR)
+
+# Model Development
+smp_size_raw <- floor(0.75 * nrow(mva))
+train_ind_raw <- sample(nrow(mva), size = smp_size_raw)
+train_raw.df <- as.data.frame(mva[train_ind_raw, ])
+test_raw.df <- as.data.frame(mva[-train_ind_raw, ])
+wdbc_raw.lda <- lda(formula = train_raw.df$Feel ~ ., data = train_raw.df)
+
+#we have made a test/train data size and include all independent variables
+
+# Model Acceptance 
+summary(wdbc_raw.lda)
+wdbc_raw.lda
+
+#it seems like the model has large discriminates meaning we have a good separation for our classes
+
+# Residual Analysis 
+residuals(wdbc_raw.lda)
+
+#lda never has residuals due to the underlying nature of the model
+
+# Prediction 
+wdbc_raw.lda.predict <- predict(wdbc_raw.lda, newdata = test_raw.df)
+wdbc_raw.lda.predict
+#here the difference between both classes is quite high meaning the model is operating well
+
+# Model Accuracy 
+plot(wdbc_raw.lda, dimen = 1, type = "b")
+str(train_raw.df)
+attach(train_raw.df)
+train_raw.df$Feel <- factor(train_raw.df$Feel)
+partimat( Feel~Instagram+LinkedIn+SnapChat+Twitter+youtube+OTT+Reddit, data=train_raw.df, method="lda")
+
+#we use some visualizations and here we notice the groups are quite low due to the small amount of data
+```

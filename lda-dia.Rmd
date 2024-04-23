@@ -1,0 +1,52 @@
+---
+title: "LDA-dia"
+author: "Leon Masin"
+date: "2024-04-25"
+output: html_document
+---
+  
+```{r}
+library(readr)
+diabetes <- read_csv("C:/Users/Student/Downloads/diabetes.csv")
+colnames(diabetes)[7] = "pedigree"
+library(MASS)
+library(ggplot2)
+library(memisc)
+library(ROCR)
+library(dplyr)
+library(klaR)
+
+# Model Development
+smp_size_raw <- floor(0.75 * nrow(diabetes))
+train_ind_raw <- sample(nrow(diabetes), size = smp_size_raw)
+train_raw.df <- as.data.frame(diabetes[train_ind_raw, ])
+test_raw.df <- as.data.frame(diabetes[-train_ind_raw, ])
+wdbc_raw.lda <- lda(formula = train_raw.df$Outcome ~ ., data = train_raw.df)
+
+#we have made a test/train data size and include all independent variables
+
+# Model Acceptance 
+summary(wdbc_raw.lda)
+wdbc_raw.lda
+#here the model as closer discrimints meaning the groups are closer together and maybe the model isnt a great fit for this data
+
+# Residual Analysis 
+residuals(wdbc_raw.lda)
+#lda never has residuals due to the underlying nature of the model
+
+# Prediction 
+wdbc_raw.lda.predict <- predict(wdbc_raw.lda, newdata = test_raw.df)
+wdbc_raw.lda.predict
+#here the difference between both classes is quite high meaning the model is operating well but logistic regression could still be a better fit
+
+# Model Accuracy 
+plot(wdbc_raw.lda, dimen = 1, type = "b")
+str(train_raw.df)
+attach(train_raw.df)
+train_raw.df$Outcome <- factor(train_raw.df$Outcome)
+partimat( Outcome ~ Pregnancies + Glucose +BloodPressure +SkinThickness +Insulin + BMI + pedigree + Age, data=train_raw.df, method="lda")
+
+#the large amount of values per group means the seperation is quite strong/accuracy is high
+
+
+```
