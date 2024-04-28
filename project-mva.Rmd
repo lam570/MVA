@@ -1,0 +1,310 @@
+---
+title: "Final Proj- MVA"
+author: "Leon Masin"
+date: "2024-04-28"
+output: html_document
+---
+  
+```{r}
+
+#Primary Question
+
+#Which apps contribute to the most to happiness or unhappiness in a user/does a user become unhappier the more they use apps?
+
+#data description
+
+#this data set is 21 rows by 9 columns where the first 8 rows are numerical columns describing independent hours of content viewed ie, on average how much did someone spend on Instagram, Linkedin, Snapchat, Twitter, Whatsapp,youtube, OTT apps like Netflix or Hulu, Reddit and the final column is a dependent numerical but can be used as a factor depending on the model called feel where on a scale out of 5 how happy is that person on average where 0=unhappy and 5=happy.
+
+#EDA
+library(readxl)
+mva <- read_excel("C:/Users/Student/Downloads/social_media_cleaned.xlsx")
+mva <- mva[-1]
+
+str(mva)
+summary(mva)
+colMeans(mva)
+cov(mva)
+cor(mva)
+ 
+#how far you are from the average student?
+scale <- scale(mva)
+ 
+classcov <- cor(mva)
+classmean <- colMeans(mva)
+ 
+mvascale <- mahalanobis(mva, classmean, classcov)
+print(mvascale[1])
+
+#Here I am the first row, and it shows that I am 452 units away from the average student, this is probably because I consume far more OTT content then the rest of my class, because of my love of film and desire to work in the entertainment industry.
+
+#Univariate
+hist(mva$OTT)
+#are there outliers in OTT?
+#yes there are many
+ 
+#bivariate
+pairs(mva[,1:8])
+#shows the relationship between all independent variables.
+ 
+#PCA Analysis
+library(readr)
+library(FactoMineR)
+library("factoextra")
+ 
+mva_pca <- prcomp(mva,scale=TRUE)
+mva_pca
+summary(mva_pca)
+eigen_mva<- mva_pca$sdev^2
+ 
+plot(eigen_mva, xlab = "Component number", ylab = "Component variance", type = "l", main = "Scree diagram")
+
+res.pca <- PCA(mva, graph = FALSE)
+ 
+fviz_pca_var(res.pca, col.var = "black")
+ 
+plot(log(eigen_mva), xlab = "Component number",ylab = "log(Component variance)", type="l",main = "Log(eigenvalue) diagram")
+ 
+#I would probably only include 6 dimensions since the Scree diagram has an elbow at PC6 and cumulatively Pc1-6 include 89 percent of the variance 
+ 
+#Cluster Analysis
+ 
+library(readr)
+library(cluster)
+library(factoextra)
+library(magrittr)
+library(NbClust)
+ 
+
+ 
+res.nbclust <- mva %>% scale() %>% NbClust(distance = "euclidean", min.nc = 2, max.nc = 10, method = "complete", index ="all") 
+ 
+#Using Majority rule optimal amount of clusters is 2, will try using kmeans to see difference visually between 2/3 clusters
+ 
+kmeans2.mva<- kmeans(scale,2,nstart = 10)
+perc.var.2 <- round(100*(1 - kmeans2.mva$betweenss/kmeans2.mva$totss),1)
+names(perc.var.2) <- "Perc. 2 clus"
+perc.var.2
+ 
+(kmeans3.mva <- kmeans(scale,3,nstart = 10))
+perc.var.3 <- round(100*(1 - kmeans3.mva$betweenss/kmeans3.mva$totss),1)
+names(perc.var.3) <- "Perc. 3 clus"
+perc.var.3
+ 
+(kmeans4.mva <- kmeans(scale,4,nstart = 10))
+perc.var.4 <- round(100*(1 - kmeans4.mva$betweenss/kmeans4.mva$totss),1)
+names(perc.var.4) <- "Perc. 4 clus"
+perc.var.4
+ 
+(kmeans5.mva <- kmeans(scale,5,nstart = 10))
+perc.var.5 <- round(100*(1 - kmeans5.mva$betweenss/kmeans5.mva$totss),1)
+names(perc.var.5) <- "Perc. 5 clus"
+perc.var.5
+
+(kmeans6.mva <- kmeans(scale,6,nstart = 10))
+perc.var.6 <- round(100*(1 - kmeans6.mva$betweenss/kmeans6.mva$totss),1)
+names(perc.var.6) <- "Perc. 6 clus"
+perc.var.6
+ 
+Variance_List <- c(perc.var.2,perc.var.3, perc.var.4, perc.var.5, perc.var.6)
+plot(Variance_List)
+ 
+pam.res <- pam(mva, 2)
+fviz_cluster(pam.res)
+ 
+(agn.mva <- agnes(mva, metric="euclidean", stand=TRUE, method = "single"))
+agn.mva$merge
+plot(agn.mva, which.plots=2)
+
+# #Factor Analysis
+ 
+library(psych)
+fit.pc <- principal(mva, nfactors=4, rotate="varimax")
+fit.pc
+ 
+ 
+fit.pc <- principal(mva, nfactors=3, rotate="varimax")
+fit.pc
+ 
+fit.pc$loadings
+fit.pc$scores
+fa.diagram(fit.pc)
+ 
+fa.parallel(mva)
+vss(mva)
+corrm.emp <- cor(mva)
+corrm.emp
+plot(corrm.emp)
+mva_pca <- prcomp(mva, scale=TRUE)
+plot(mva_pca)
+ 
+#PCA Summary
+# #first of all, our analysis shows that we can get rid of some complexity in the data and that instagram/linkedin are highly similar, we can also see that variability mostly comes from our first 6 principal components meaning some of the apps we use dont hold that much weight in terms of usage
+ 
+#Cluster Summary
+#The point of cluster analysis is to group similar data together, so here most app usage is very similar based on student by student data save for one so that's why we have two distinct group for our clustering analysis, it means that one app is being used far more then the others as well since our visualization places cluster 2 farther away
+ 
+ 
+#EFA Summary
+#Here we have clearly separated the data into three distinct components based on our columns showing which apps, it seems like the data fund in our well being matches the same amount of time used for linkedin/Reddit since we used a numerical scale for both, also interesting to see that OTT and Twitter/Reddit are used the same amount
+ 
+#Analysis Takeaway
+#Overall this analysis that we've done shows that for the most part there is very little variance between app usage over the multiple apps and types of apps we use, most of the students also use everything very similarly so theres very little global variance except for one app, which is probably OTT
+ 
+#Multiple Regression
+library(GGally)
+library(car)
+library(gvlma)
+
+ 
+#model development
+fit <- lm(`How you felt the entire week?` ~ Instagram + LinkedIn + SnapChat + Twitter + youtube + OTT + Reddit, data = mva)
+ 
+#trying to predict a user's average feelings based on how much they consume social media/which types of media impact feelings the most
+ 
+#model acceptance
+confint(fit,level=0.95)
+fitted(fit)
+ 
+#seems like the range for twitter/Linkedin are the highest meaning they have the most outliers
+
+#Residual analysis
+residuals(fit)
+ 
+#the errors are mostly quite small meaning the predictions will be quite accurate
+ 
+#Prediction
+prediction <- data.frame(Instagram = 1, LinkedIn = 5, SnapChat = 1, Twitter = 2, youtube = 2, OTT = 10, Reddit = 4) 
+predicted_feel <- predict(fit, newdata = prediction)
+print(predicted_feel)
+
+#here the average happiness of someone using these apps for that amount of time would be 3.21/5
+ 
+#Model Accuracy
+gvmodel <- gvlma(fit)
+summary(gvmodel)
+ 
+#measures the general assumptions for each part of the fitted regression and here the p value is quite high meaning there's randomness in our data set/possibly accept null hypothesis
+ 
+#important visualizations
+crPlots(fit)
+spreadLevelPlot(fit)
+influencePlot(fit, id.method="identify", main="Influence Plot", sub="Circle size is proportial to Cook's Distance")
+qqPlot(fit, main="QQ Plot")
+ 
+#helps show/visualize core components of the regression
+ 
+#Logistic Regression
+rm(list = ls())
+library(psych)
+library(readxl)
+library(readxl)
+mva <- read_excel("C:/Users/Student/Downloads/social_media_cleaned.xlsx")
+mva <- mva[-1]
+colnames(mva)[9] = "Feel"
+library(ggplot2)
+library(cowplot)
+library(regclass)
+library(caret)
+library(e1071)
+library(pROC)
+attach(mva)
+
+mva$Feel <- as.factor(mva$Feel)
+mva$Instagram <- as.integer(mva$Instagram)
+mva$LinkedIn <- as.integer(mva$LinkedIn)
+mva$SnapChat <- as.integer(mva$SnapChat)
+mva$Twitter <- as.integer(mva$Twitter)
+mva$`Whatsapp/Wechat` <- as.integer(mva$`Whatsapp/Wechat`)
+mva$youtube <- as.integer(mva$youtube)
+mva$OTT <- as.integer(mva$OTT)
+mva$Reddit <- as.integer(mva$Reddit)
+
+#model development
+logistic_simple <- glm(Feel~Instagram+LinkedIn+SnapChat+Twitter+`Whatsapp/Wechat` +youtube+OTT+Reddit, data=mva, family="binomial")
+
+#we include all the types of content someone has looked at
+
+#model acceptance
+summary(logistic_simple)
+
+#the p values seems quite high here meaning there is a lot of randomness in our data set
+#residual analysis
+residuals(logistic_simple)
+
+#prediction
+predicted.data <- data.frame(probability.of.Feel=logistic_simple$fitted.values, Outcome=mva$Feel)
+predicted.data <- predicted.data[order(predicted.data$probability.of.Feel, decreasing=FALSE),]
+predicted.data$rank <- 1:nrow(predicted.data)
+predicted.data
+
+#we arranged the predictions in descending order to make it easier to visualize
+
+#model accuracy
+ggplot(data=predicted.data, aes(x=rank, y=probability.of.Feel)) +
+geom_point(aes(color=Feel), alpha=1, shape=4, stroke=2) +
+xlab("Index") +
+ylab("Predicted probability of feeling happy")
+ 
+#here the model seems to be very inaccurate even though the amount of data points is very low because everything is at the top of the graph.
+ 
+#LDA
+library(psych)
+library(readxl)
+mva <- read_excel("C:/Users/Student/Downloads/social_media_cleaned.xlsx")
+mva <- mva[-1]
+colnames(mva)[9] = "Feel"
+x <- model.matrix( ~ ., mva)
+library(MASS)
+library(ggplot2)
+library(memisc)
+library(ROCR)
+library(dplyr)
+library(klaR)
+
+# Model Development
+smp_size_raw <- floor(0.75 * nrow(mva))
+train_ind_raw <- sample(nrow(mva), size = smp_size_raw)
+train_raw.df <- as.data.frame(mva[train_ind_raw, ])
+test_raw.df <- as.data.frame(mva[-train_ind_raw, ])
+wdbc_raw.lda <- lda(formula = train_raw.df$Feel ~ ., data = train_raw.df)
+
+#we have made a test/train data size and include all independent variables
+
+# Model Acceptance 
+summary(wdbc_raw.lda)
+wdbc_raw.lda
+
+#it seems like the model has large discriminates meaning we have a good separation for our classes
+
+# Residual Analysis 
+residuals(wdbc_raw.lda)
+
+#lda never has residuals due to the underlying nature of the model
+
+# Prediction 
+wdbc_raw.lda.predict <- predict(wdbc_raw.lda, newdata = test_raw.df)
+wdbc_raw.lda.predict
+#here the difference between both classes is quite high meaning the model is operating well
+
+# Model Accuracy 
+plot(wdbc_raw.lda, dimen = 1, type = "b")
+str(train_raw.df)
+attach(train_raw.df)
+train_raw.df$Feel <- factor(train_raw.df$Feel)
+partimat( Feel~Instagram+LinkedIn+SnapChat+Twitter+youtube+OTT+Reddit, data=train_raw.df, method="lda")
+
+#we use some visualizations and here we notice the groups are quite low due to the small amount of data
+
+#Key Findings
+#there are many many outliers in our data and too few data points meaning most of the things we find can only be seen as assumptions also logistic/multiple regression is very iffy in this dataset.
+
+#But based on our analysis some students share similar app behavior to others meaning we can in fact cluster and group them together and that the more someone uses an app aside from outliers the less happy they are. 
+
+#Conclusion/New Questions
+#if we had less biased data or more samples would the evidence still suggest the same answers? 
+#Why dont people use specific apps as much as others?
+
+
+
+
+```

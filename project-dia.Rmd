@@ -1,0 +1,345 @@
+---
+title: "Final Proj- Diabetes"
+author: "Leon Masin"
+date: "2024-04-28"
+output: html_document
+---
+  
+```{r}
+
+#Primary Question
+
+#does the age, blood thickness, etc. impact someone's likelihood of having diabetes?
+
+#data description
+
+#this data set is 768 rows by 9 columns where the first 8 rows are numerical columns describing independent characteristics of a patient ie, their amount of pregnancies, glucose levels, blood pressure, the thickness of their skin, insulin levels, their BMI, their pedigree function, their age. And the final column is a  dependent variable called outcome where 0=healthy, 1=patient has diabetes ie unhealthy which is numeric but can be used as afactor depending on the dataset
+
+#EDA
+library(readr)
+diabetes <- read_csv("C:/Users/Student/Downloads/diabetes.csv")
+colnames(diabetes)[7] = "pedigree"
+
+str(diabetes)
+summary(diabetes)
+colMeans(diabetes)
+cov(diabetes)
+cor(diabetes)
+
+#univariate
+hist(diabetes$BloodPressure)
+#question: what is the skew of blood pressure for diabetes patients?
+#insight: the average blood pressure is around 60-90
+
+#bivariate
+pairs(diabetes[,1:8])
+#question: what are the general relationships between the columns
+#insight: seems like most of the data has a wide ranging postive relationship with other info
+
+library(lattice)
+library(ggplot2)
+library(ggridges)
+library(ggvis)
+library(ggthemes)
+library(cowplot)
+library(gapminder)
+library(gganimate)
+library(dplyr)
+library(tidyverse)
+library(grid)
+library(gridExtra)
+library(RColorBrewer)
+
+ggplot(diabetes, aes(x=Age,y=Glucose))+ geom_point(aes(color=Pregnancies)) + stat_smooth() + labs(x="age per patient", y="level of glucose", title="Diabetes Data")+theme_economist() 
+#Question
+#does the age of a patient and their glucose level correlate to a smaller amount of pregnancies over time?
+#Insight
+#yes it does but glucose can be high no matter the age
+
+ggplot(diabetes, aes(x=Insulin,y=Glucose))+ geom_point(aes(color=Age)) + stat_smooth() + labs(x="level of insulin", y="level of glucose", title="Diabetes Data")+theme_wsj() 
+#Question: is there a correlation between insulin or glucose levels as a patient ages
+#Insight: it does get higher if the patient is older
+
+#Models
+
+#PCA
+library(FactoMineR)
+library("factoextra")
+
+#correlation matrix
+cor(diabetes[-9])
+
+#pca analysis
+diabetes_pca <- prcomp(diabetes[,-9],scale=TRUE)
+diabetes_pca
+summary(diabetes_pca)
+eigen_diabetes<- diabetes_pca$sdev^2
+
+#Scree Diagram
+plot(eigen_diabetes, xlab = "Component number", ylab = "Component variance", type = "l", main = "Scree diagram")
+#but if we use only pc1-3 we amount to only 61 percent of the variance, going to look at second elbow
+
+#log diagram
+plot(log(eigen_diabetes), xlab = "Component number",ylab = "log(Component variance)", type="l",main = "Log(eigenvalue) diagram")
+#the second elbow seems to be key here so I'll use PC6 which cumultaively includes around 90 percent of the total variance
+
+#Variable PCA
+res.pca <- PCA(diabetes[,-9], graph = FALSE)
+fviz_pca_var(res.pca, col.var = "black")
+#Blood Pressure adds a lot to the dim 1/2
+
+#Biplot
+fviz_pca_biplot(res.pca, repel = TRUE,col.ind = diabetes$Outcome,
+                col.var = "#2E9FDF", # Variables color
+                )
+#too dense to see anything
+
+
+#individual values 
+fviz_pca_ind(res.pca, 
+             pointsize = 3, pointshape = 21, fill = "lightblue",
+             labelsize = 5, repel = TRUE)
+
+
+
+#final conclusion
+#I will use PC1-6 to get 90% of the total variance from my data and thus discard two dimensions making it easier to further analysis
+
+#Cluster
+library(readr)
+library(cluster)
+library(factoextra)
+library(magrittr)
+library(NbClust)
+
+#non hierarchical clustering (K-means)
+
+#scaled
+matstd.diabetes <- scale(diabetes[,-9])
+
+#Two clusters
+kmeans2.diabetes<- kmeans(matstd.diabetes,2,nstart = 10)
+perc.var.2 <- round(100*(1 - kmeans2.diabetes$betweenss/kmeans2.diabetes$totss),1)
+names(perc.var.2) <- "Perc. 2 clus"
+perc.var.2
+
+#Three Clusters
+(kmeans3.diabetes <- kmeans(matstd.diabetes,3,nstart = 10))
+perc.var.3 <- round(100*(1 - kmeans3.diabetes$betweenss/kmeans3.diabetes$totss),1)
+names(perc.var.3) <- "Perc. 3 clus"
+perc.var.3
+
+#Four clusters
+(kmeans4.diabetes <- kmeans(matstd.diabetes,4,nstart = 10))
+perc.var.4 <- round(100*(1 - kmeans4.diabetes$betweenss/kmeans4.diabetes$totss),1)
+names(perc.var.4) <- "Perc. 4 clus"
+perc.var.4
+
+#Five clusters
+(kmeans5.diabetes <- kmeans(matstd.diabetes,5,nstart = 10))
+perc.var.5 <- round(100*(1 - kmeans5.diabetes$betweenss/kmeans5.diabetes$totss),1)
+names(perc.var.5) <- "Perc. 5 clus"
+perc.var.5
+
+#Six clusters
+(kmeans6.diabetes <- kmeans(matstd.diabetes,6,nstart = 10))
+perc.var.6 <- round(100*(1 - kmeans6.diabetes$betweenss/kmeans6.diabetes$totss),1)
+names(perc.var.6) <- "Perc. 6 clus"
+perc.var.6
+attributes(perc.var.6)
+Variance_List <- c(perc.var.2,perc.var.3,perc.var.4,perc.var.5,perc.var.6)
+
+#Variance_List/ Visualization
+plot(Variance_List)
+#explanation:
+#stops being linear after 2 clusters, so the optimal cluster amount is 2
+
+#membership
+(agn.diabetes <- agnes(diabetes, metric="euclidean", stand=TRUE, method = "single"))
+agn.diabetes$merge
+
+#second visualization
+plot(agn.diabetes, which.plots=2)
+
+#hierarchical clustering
+
+#optimal cluster method/visualization
+res.nbclust <- diabetes %>% scale() %>% NbClust(distance = "euclidean", min.nc = 2, max.nc = 10, method = "complete", index ="all") 
+#optimal number of clusters is 2, because according to the majority rule this is the best amount of clusters/ 2 creates the largest amount of distance between clusters
+
+#cluster membership in visual form
+matstd.diabetes <- scale(diabetes[,1:8])
+dist.diabetes <- dist(matstd.diabetes, method="euclidean")
+clusemploy.nn <- hclust(dist.diabetes, method = "single")
+
+plot(as.dendrogram(clusemploy.nn),ylab="Distance between indicators",ylim=c(0,6),
+     main="Dendrogram. Different helath risks \n  and their impact")
+
+#Visualization
+pam.res <- pam(diabetes, 2)
+fviz_cluster(pam.res)
+
+#EFA
+library(psych)
+
+fit.pc <- principal(diabetes[-9], nfactors=3, rotate="varimax")
+fit.pc
+
+#what columns are attributed to which factor
+fit.pc$loadings
+fit.pc$scores
+fa.diagram(fit.pc)
+#In RC2 we have Age, Pregnancies
+#In RC1 we have BMI, Blood Pressure, Skin Thickness
+#In RC3 we have Glucose and Insulin, Pedigree
+
+#Here are some visualizations
+fa.parallel(diabetes[-9])
+vss(diabetes[-9])
+corrm.emp <- cor(diabetes[-9])
+corrm.emp
+plot(corrm.emp)
+dia_pca <- prcomp(diabetes[-9], scale=TRUE)
+plot(dia_pca)
+
+
+#Multiple Regression
+
+library(GGally)
+library(car)
+library(gvlma)
+
+#model development
+fit <- lm(Age ~ Pregnancies + Glucose + BloodPressure + SkinThickness + Insulin + BMI + pedigree + Outcome, data = diabetes)
+
+#fitting the model using all columns including my dependent variable
+
+#model acceptance
+confint(fit,level=0.95)
+fitted(fit)
+
+#these are the assumptions made by running the fitted model and seeing what values are predicted
+
+#Residual analysis
+residuals(fit)
+
+#measuring the errors here we see its quite a low number from a max of 20 units to a low of -22 units difference in our prediction vs real
+
+#Prediction
+prediction <- data.frame(Pregnancies = 2, Glucose = 155, BloodPressure = 70, SkinThickness = 35,Insulin = 11, BMI = 47, pedigree = 0.59, Outcome = 1) 
+predicted_age <- predict(fit, newdata = prediction)
+print(predicted_age)
+#here when we give a random assortment of values for all of our variables the predicted age for this user would be 32 years
+
+#Model Accuracy
+gvmodel <- gvlma(fit)
+summary(gvmodel)
+
+#measures the general assumptions for each part of the fitted regression
+
+#important visualizations
+crPlots(fit)
+spreadLevelPlot(fit)
+influencePlot(fit, id.method="identify", main="Influence Plot", sub="Circle size is proportial to Cook's Distance")
+qqPlot(fit, main="QQ Plot")
+
+#helps show/visualize core components of the regression
+
+#Logistic Regression
+
+library(ggplot2)
+library(cowplot)
+library(regclass)
+library(caret)
+library(e1071)
+library(pROC)
+
+diabetes$Outcome <- as.factor(diabetes$Outcome)
+
+#model development
+logistic_simple <- glm(Outcome ~ ., data=diabetes, family="binomial")
+
+#we use all coumns to make a logisitc regression model
+
+#model acceptance
+summary(logistic_simple)
+
+#here it seems like nost of our p values are quite low which is very good and emans most of the data is not random
+
+#residual analysis
+residuals(logistic_simple)
+#the errors are quite low again showing our logisitc regression is quite accurate
+
+#prediction
+predicted.data <- data.frame(probability.of.Outcome=logistic_simple$fitted.values, Outcome=diabetes$Outcome)
+predicted.data <- predicted.data[order(predicted.data$probability.of.Outcome, decreasing=FALSE),]
+predicted.data$rank <- 1:nrow(predicted.data)
+predicted.data
+
+#first we make the prediction then we create a rank column to make it easier to understand by having it in descending order to use in a visualization later, called the rank column
+
+#model accuracy
+ggplot(data=predicted.data, aes(x=rank, y=probability.of.Outcome)) +
+geom_point(aes(color=Outcome), alpha=1, shape=4, stroke=2) +
+xlab("Index") +
+ylab("Predicted probability of getting diabetes")
+
+
+#this visualization shows us the model is very accurate in an easy to understand manner
+
+
+#LDA
+
+library(MASS)
+library(ggplot2)
+library(memisc)
+library(ROCR)
+library(dplyr)
+library(klaR)
+
+# Model Development
+smp_size_raw <- floor(0.75 * nrow(diabetes))
+train_ind_raw <- sample(nrow(diabetes), size = smp_size_raw)
+train_raw.df <- as.data.frame(diabetes[train_ind_raw, ])
+test_raw.df <- as.data.frame(diabetes[-train_ind_raw, ])
+wdbc_raw.lda <- lda(formula = train_raw.df$Outcome ~ ., data = train_raw.df)
+
+#we have made a test/train data size and include all independent variables
+
+# Model Acceptance 
+summary(wdbc_raw.lda)
+wdbc_raw.lda
+#here the model as closer discrimints meaning the groups are closer together and maybe the model isnt a great fit for this data
+
+# Residual Analysis 
+residuals(wdbc_raw.lda)
+#lda never has residuals due to the underlying nature of the model
+
+# Prediction 
+wdbc_raw.lda.predict <- predict(wdbc_raw.lda, newdata = test_raw.df)
+wdbc_raw.lda.predict
+#here the difference between both classes is quite high meaning the model is operating well but logistic regression could still be a better fit
+
+# Model Accuracy 
+plot(wdbc_raw.lda, dimen = 1, type = "b")
+str(train_raw.df)
+attach(train_raw.df)
+train_raw.df$Outcome <- factor(train_raw.df$Outcome)
+partimat( Outcome ~ Pregnancies + Glucose +BloodPressure +SkinThickness +Insulin + BMI + pedigree + Age, data=train_raw.df, method="lda")
+
+#the large amount of values per group means the seperation is quite strong/accuracy is high
+
+#Key Findings
+#based on PCA/Factor Analysis that not all the variables were useful to finding out if a user had diabetes and age/glucose/pedigree were by far the most important.
+
+#We also found out that this data set is pretty accurate so we can use regression to actually predict if a user will have diabetes based on specific variables.
+
+#Conclusion/New Questions
+#Diabetes based on this data set can be somewhat predictable and hopefully preventable, people should make sure their glucose/insulin levels are not too high and have check up's regularly to make sure they can prevent diabetes from occurring. 
+
+#what other variables not shown in the data set can help predict diabetes, why does age impact outcome so heavily?
+
+
+
+
+```
